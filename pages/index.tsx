@@ -1,10 +1,5 @@
 import Head from 'next/head';
-import Image from 'next/image';
-import { Inter } from 'next/font/google';
 import styles from '@/styles/Home.module.css';
-
-const inter = Inter({ subsets: ['latin'] });
-
 export default function Home() {
   return (
     <>
@@ -16,6 +11,24 @@ export default function Home() {
       </Head>
       <main className={styles.main}>
         <h1>stock price</h1>
+        <button
+          onClick={async () => {
+            const res = await fetch('/api/stock?code=8591');
+            const data = await res.json();
+            console.log(data);
+          }}
+        >
+          getStock
+        </button>
+        <button
+          onClick={async () => {
+            const res = await fetch('/api/hello?code=5023');
+            const data = await res.json();
+            console.log(data);
+          }}
+        >
+          Hello
+        </button>
       </main>
     </>
   );
