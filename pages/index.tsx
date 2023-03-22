@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import styles from '@/styles/Home.module.css';
+import { Button } from '@chakra-ui/react';
 export default function Home() {
   return (
     <>
@@ -9,9 +9,9 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
+      <main>
         <h1>stock price</h1>
-        <button
+        <Button
           onClick={async () => {
             const res = await fetch('/api/stock?code=8591');
             const data = await res.json();
@@ -19,8 +19,8 @@ export default function Home() {
           }}
         >
           getStock
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={async () => {
             const res = await fetch('/api/hello?code=5023');
             const data = await res.json();
@@ -28,7 +28,7 @@ export default function Home() {
           }}
         >
           Hello
-        </button>
+        </Button>
       </main>
     </>
   );
