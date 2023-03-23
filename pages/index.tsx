@@ -1,4 +1,15 @@
-import { Button, Center, Heading, VStack } from '@chakra-ui/react';
+import {
+  Button,
+  Center,
+  Heading,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  VStack,
+} from '@chakra-ui/react';
 import Head from 'next/head';
 import { useState } from 'react';
 
@@ -7,8 +18,40 @@ type Stock = {
   dividend: number;
 };
 
+type CompanyData = {
+  name: string;
+  dividendYield: number;
+  stockPrice: number;
+  dividend: number;
+  desiredYield: number;
+};
+
 const STOCK_CODE = '8591';
 const HELLO_CODE = '5023';
+
+const companyData: CompanyData[] = [
+  {
+    name: 'ABC Company',
+    dividendYield: 2.5,
+    stockPrice: 1000,
+    dividend: 25,
+    desiredYield: 3.0,
+  },
+  {
+    name: 'XYZ Company',
+    dividendYield: 1.8,
+    stockPrice: 800,
+    dividend: 14.4,
+    desiredYield: 2.0,
+  },
+  {
+    name: 'DEF Company',
+    dividendYield: 3.2,
+    stockPrice: 1200,
+    dividend: 38.4,
+    desiredYield: 4.0,
+  },
+];
 
 export default function Home() {
   const [stockData, setStockData] = useState<Stock | null>(null);
@@ -59,6 +102,28 @@ export default function Home() {
               <p>Dividend: {stockData.dividend.toLocaleString()}</p>
             </VStack>
           )}
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th>Company Name</Th>
+                <Th>Dividend Yield</Th>
+                <Th>Stock Price</Th>
+                <Th>Dividend</Th>
+                <Th>Desired Yield</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {companyData.map((data, index) => (
+                <Tr key={index}>
+                  <Td>{data.name}</Td>
+                  <Td>{data.dividendYield}%</Td>
+                  <Td>{data.stockPrice.toLocaleString()}</Td>
+                  <Td>{data.dividend.toLocaleString()}</Td>
+                  <Td>{data.desiredYield}%</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
         </VStack>
       </Center>
     </>
