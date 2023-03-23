@@ -4,8 +4,8 @@ import puppeteer from 'puppeteer';
 
 type Response =
   | {
-      stockPrice: string;
-      dividend: string;
+      stockPrice: number;
+      dividend: number;
     }
   | {
       error: string;
@@ -72,9 +72,10 @@ export default async function handler(
     })) as string;
     console.log('現在の配当金は', text, 'です。');
 
-    return res
-      .status(200)
-      .json({ stockPrice: currentValue, dividend: text.slice(0, -1) });
+    return res.status(200).json({
+      stockPrice: parseFloat(currentValue.replace(/,/g, '')),
+      dividend: Number(text.slice(0, -1)),
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'error' });
