@@ -2,13 +2,27 @@ import {
   Box,
   Button,
   Center,
+  Flex,
+  FormControl,
+  FormLabel,
   Heading,
+  Input,
   Stack,
   StackDivider,
   Text,
+  useDisclosure,
+} from '@chakra-ui/react';
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
 } from '@chakra-ui/react';
 import Head from 'next/head';
-import { FC, useState } from 'react';
+import { type FC, useState, useRef } from 'react';
 
 type TStock = {
   stockPrice: number;
@@ -17,7 +31,6 @@ type TStock = {
 
 type TCompanyData = {
   companyName: string;
-  divYield: number; // 利回り
   desiredYield: number; // 希望配当金
   stockCode: string; // 株コード
 } & TStock;
@@ -28,17 +41,15 @@ const HELLO_CODE = '5023';
 const dummy: TCompanyData[] = [
   {
     companyName: '東京海上日動火災保険',
-    stockPrice: 10000,
-    dividend: 500,
-    divYield: 0, // 配当金/株価
+    stockPrice: 4000,
+    dividend: 222,
     desiredYield: 2,
     stockCode: '8591',
   },
   {
     companyName: '三菱ＵＦＪフィナンシャル',
-    stockPrice: 10000,
+    stockPrice: 13050,
     dividend: 100,
-    divYield: 0, // 配当金/株価
     desiredYield: 2,
     stockCode: '8306',
   },
@@ -68,7 +79,6 @@ export default function Home() {
   const handleUpdateData = (index: number) => {
     setCompanyDataState((prevState) => {
       const newData = [...prevState];
-      newData[index].divYield = Math.round(Math.random() * 5 * 10) / 10;
       newData[index].stockPrice = Math.round(Math.random() * 1000);
       return newData;
     });
@@ -82,7 +92,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Box minH="100vh">
-        <Button>登録</Button>
+        <RegisterModal />
         {companyDataState.map((data, index) => (
           <StockCard
             key={data.companyName}
@@ -108,6 +118,9 @@ export const StockCard: FC<Props> = ({
   stockCode,
 }) => {
   const divYield: number = Math.round((dividend / stockPrice) * 100 * 10) / 10;
+  const desiredStockPrice: number =
+    Math.round(((stockPrice * divYield) / desiredYield) * 10) / 10;
+
   return (
     <Center>
       <Box
@@ -121,8 +134,7 @@ export const StockCard: FC<Props> = ({
         <Heading size="md">{companyName}</Heading>
         <Stack divider={<StackDivider />} spacing="2" pt="2">
           <Text pt="2" fontSize="sm">
-            現在の株価 : {stockPrice}円 | 希望株価 :
-            {(stockPrice * divYield) / desiredYield}円
+            現在の株価 : {stockPrice}円 | 希望株価 :{desiredStockPrice}円
           </Text>
           <Text pt="2" fontSize="sm">
             利回り : {divYield}% | 希望利回り : {desiredYield}%
@@ -130,15 +142,73 @@ export const StockCard: FC<Props> = ({
           <Text pt="2" fontSize="sm">
             配当金 : {dividend}円
           </Text>
-          <Button
-            onClick={onUpdateData}
-            colorScheme={divYield >= desiredYield ? 'green' : 'red'}
-            variant="outline"
-          >
-            更新
-          </Button>
+          <Flex pt="2">
+            <Button
+              colorScheme={divYield >= desiredYield ? 'green' : 'red'}
+              variant="outline"
+              w="100%"
+              mx={1}
+            >
+              編集
+            </Button>
+            <Button
+              onClick={onUpdateData}
+              colorScheme={divYield >= desiredYield ? 'green' : 'red'}
+              variant="outline"
+              loadingText="更新中"
+              isLoading={false}
+              w="100%"
+              mx={1}
+            >
+              更新
+            </Button>
+          </Flex>
         </Stack>
       </Box>
     </Center>
+  );
+};
+
+const RegisterModal: FC = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const initialRef = useRef(null);
+
+  return (
+    <>
+      <Button onClick={onOpen} colorScheme={'purple'}>
+        新規銘柄登録
+      </Button>
+
+      <Modal initialFocusRef={initialRef} isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>新規銘柄登録</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl>
+              <FormLabel>会社名</FormLabel>
+              <Input placeholder="トヨタ自動車" />
+            </FormControl>
+
+            <FormControl mt={4}>
+              <FormLabel>銘柄コード</FormLabel>
+              <Input placeholder="1234" />
+            </FormControl>
+
+            <FormControl mt={4}>
+              <FormLabel>希望利回り(後で入力でも可)</FormLabel>
+              <Input placeholder="3.5" />
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3}>
+              登録
+            </Button>
+            <Button onClick={onClose}>戻る</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
