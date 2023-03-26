@@ -1,6 +1,6 @@
 import { db } from '@/lib/firebase';
 import { Box, Button } from '@chakra-ui/react';
-import { addDoc, doc, setDoc } from 'firebase/firestore';
+import { addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import React from 'react';
 
 const demo = () => {
@@ -12,10 +12,18 @@ const demo = () => {
       country: 'USA',
     });
   };
+
+  const getFirebase = async () => {
+    console.log('getFirebase');
+    const docRef = doc(db, 'cities', 'LA');
+    const docSnap = await getDoc(docRef);
+    console.log(docSnap.data());
+  };
+
   return (
     <Box>
       <Button onClick={addFirebase}>addFirebase</Button>
-      <Button>getFirebase</Button>
+      <Button onClick={getFirebase}>getFirebase</Button>
     </Box>
   );
 };
