@@ -3,18 +3,12 @@ import {
   Button,
   Center,
   Heading,
-  Table,
-  TableCaption,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-  VStack,
+  Stack,
+  StackDivider,
+  Text,
 } from '@chakra-ui/react';
-import { FaSyncAlt } from 'react-icons/fa';
 import Head from 'next/head';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type Stock = {
   stockPrice: number;
@@ -33,6 +27,27 @@ const STOCK_CODE = '8591';
 const HELLO_CODE = '5023';
 
 const companyData: CompanyData[] = [
+  {
+    name: 'ABC社',
+    dividendYield: 2.5,
+    stockPrice: 1000,
+    dividend: 25,
+    desiredYield: 3.0,
+  },
+  {
+    name: 'XYZ社',
+    dividendYield: 1.8,
+    stockPrice: 800,
+    dividend: 14.4,
+    desiredYield: 2.0,
+  },
+  {
+    name: 'DEF社',
+    dividendYield: 3.2,
+    stockPrice: 1200,
+    dividend: 38.4,
+    desiredYield: 3.0,
+  },
   {
     name: 'ABC社',
     dividendYield: 2.5,
@@ -94,65 +109,58 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Box minH="100vh">
-        <Center bgColor={'white'}>
-          <VStack spacing="8" w="80%" mt={10}>
-            <Heading as="h1" size="lg">
-              更新ボタンを設置したテーブル
-            </Heading>
-            <Button
-              leftIcon={<FaSyncAlt />}
-              onClick={handleFetchStockData}
-              isLoading={isLoadingStockData}
-              loadingText="取得中"
-            >
-              全て更新
-            </Button>
-            {stockData && (
-              <Box>
-                <p>株価: {stockData.stockPrice}円</p>
-                <p>配当金: {stockData.dividend}円</p>
-              </Box>
-            )}
-            <Table variant="simple">
-              <TableCaption>Imperial to metric conversion factors</TableCaption>
-              <Thead>
-                <Tr>
-                  <Th>企業名</Th>
-                  <Th>配当利回り</Th>
-                  <Th>株価</Th>
-                  <Th>配当金</Th>
-                  <Th>目標利回り</Th>
-                  <Th></Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {companyDataState.map((data, index) => (
-                  <Tr
-                    key={index}
-                    bgColor={
-                      data.dividendYield >= data.desiredYield
-                        ? 'green.100'
-                        : 'red.100'
-                    }
-                  >
-                    <Td>{data.name}</Td>
-                    <Td>{data.dividendYield}%</Td>
-                    <Td>{data.stockPrice}円</Td>
-                    <Td>{data.dividend}円</Td>
-                    <Td>{data.desiredYield}%</Td>
-                    <Td>
-                      <Button onClick={() => handleUpdateData(index)}>
-                        株価と配当金を再取得
-                      </Button>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-            <Button onClick={handleFetchHelloData}>Hello APIを取得</Button>
-          </VStack>
-        </Center>
+        {/* <Center bgColor={'white'}> */}
+        {companyData.map((data, index) => (
+          <StockCard
+            key={data.name}
+            data={data}
+            onUpdateData={() => handleUpdateData(index)}
+          />
+        ))}
+        {/* </Center> */}
       </Box>
     </>
   );
 }
+
+type CardProps = {
+  data: CompanyData;
+  onUpdateData: () => void;
+};
+
+export const StockCard = ({ data, onUpdateData }: CardProps) => {
+  const { name, dividendYield, stockPrice, dividend, desiredYield } = data;
+
+  return (
+    <Center>
+      <Box
+        bgColor={
+          data.dividendYield >= data.desiredYield ? 'green.100' : 'red.100'
+        }
+        rounded="md"
+        shadow="md"
+        width="80"
+        p="4"
+        m="2"
+      >
+        <Heading size="md">{name}</Heading>
+        <Stack divider={<StackDivider />} spacing="2" pt="2">
+          <Text pt="2" fontSize="sm">
+            Dividend Yield : {dividendYield}%
+          </Text>
+          <Text pt="2" fontSize="sm">
+            Stock Price : {stockPrice}円
+          </Text>
+
+          <Text pt="2" fontSize="sm">
+            Dividend : {dividend}円
+          </Text>
+          <Text pt="2" fontSize="sm">
+            Desired Yield : {desiredYield}%
+          </Text>
+          <Button onClick={onUpdateData}>Update Data</Button>
+        </Stack>
+      </Box>
+    </Center>
+  );
+};
