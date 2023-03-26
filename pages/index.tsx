@@ -11,8 +11,6 @@ import {
   StackDivider,
   Text,
   useDisclosure,
-} from '@chakra-ui/react';
-import {
   Modal,
   ModalOverlay,
   ModalContent,
@@ -20,6 +18,11 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
 } from '@chakra-ui/react';
 import Head from 'next/head';
 import { type FC, useState, useRef } from 'react';
@@ -197,7 +200,13 @@ const RegisterModal: FC = () => {
 
             <FormControl mt={4}>
               <FormLabel>希望利回り(後で入力でも可)</FormLabel>
-              <Input placeholder="3.5" />
+              <NumberInput precision={1} step={0.1} placeholder={'15'}>
+                <NumberInputField />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
             </FormControl>
           </ModalBody>
 
