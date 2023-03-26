@@ -182,12 +182,16 @@ export const StockCard: FC<Props> = ({
 const RegisterModal: FC = () => {
   const schema = z.object({
     brand: z.string().nonempty('銘柄を入力してください'),
-    stockCode: z.string(),
-    desiredYield: z.string().transform((val) => Number(val)),
+    stockCode: z.string().length(4, { message: '4桁の数値を入力してください' }),
+    desiredYield: z
+      .string()
+      .transform((val) => Number(val))
+      .refine((val) => val < 100, {
+        message: '100未満で入力してください',
+      }),
   });
 
   type TSchema = z.infer<typeof schema>;
-
   const {
     register,
     handleSubmit,
@@ -195,6 +199,11 @@ const RegisterModal: FC = () => {
     control,
   } = useForm<TSchema>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      brand: '',
+      stockCode: '',
+      desiredYield: '0' as unknown as number,
+    },
   });
 
   const { isOpen, onOpen, onClose } = useDisclosure();
