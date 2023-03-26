@@ -184,14 +184,13 @@ const RegisterModal: FC = () => {
     brand: z.string().nonempty('銘柄を入力してください'),
     stockCode: z.string().length(4, { message: '4桁の数値を入力してください' }),
     desiredYield: z
-      .string()
-      .transform((val) => Number(val))
-      .refine((val) => val < 100, {
-        message: '100未満で入力してください',
-      }),
+      .number()
+      .min(0, { message: '0以上で入力してください' })
+      .max(99.9, { message: '100未満で入力してください' }),
   });
 
   type TSchema = z.infer<typeof schema>;
+
   const {
     register,
     handleSubmit,
@@ -202,7 +201,7 @@ const RegisterModal: FC = () => {
     defaultValues: {
       brand: '',
       stockCode: '',
-      desiredYield: '0' as unknown as number,
+      desiredYield: 0,
     },
   });
 
@@ -271,7 +270,7 @@ const RegisterModal: FC = () => {
                   control={control}
                   render={({ field }) => (
                     <NumberInput precision={1} step={0.1}>
-                      <NumberInputField placeholder="3.5" {...field} />
+                      <NumberInputField placeholder="0.0" {...field} />
                       <NumberInputStepper>
                         <NumberIncrementStepper />
                         <NumberDecrementStepper />
