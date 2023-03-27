@@ -32,6 +32,8 @@ import { type FC, useState, useRef, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type TStock = {
   stockPrice: number;
@@ -78,21 +80,21 @@ export default function Home() {
     setIsLoadingStock(false);
   };
 
-  const handleFetchHello = async () => {
-    const res = await fetch(`/api/hello?code=${HELLO_CODE}`);
-    const data = await res.json();
-    console.log(data);
-  };
+  // const handleFetchHello = async () => {
+  //   const res = await fetch(`/api/hello?code=${HELLO_CODE}`);
+  //   const data = await res.json();
+  //   console.log(data);
+  // };
 
-  const [companyDataState, setCompanyDataState] = useState<TStockCard[]>(dummy);
+  // const [companyDataState, setCompanyDataState] = useState<TStockCard[]>(dummy);
 
-  const handleUpdateData = (index: number) => {
-    setCompanyDataState((prevState) => {
-      const newData = [...prevState];
-      newData[index].stockPrice = Math.round(Math.random() * 1000);
-      return newData;
-    });
-  };
+  // const handleUpdateData = (index: number) => {
+  //   setCompanyDataState((prevState) => {
+  //     const newData = [...prevState];
+  //     newData[index].stockPrice = Math.round(Math.random() * 1000);
+  //     return newData;
+  //   });
+  // };
 
   return (
     <>
@@ -236,6 +238,17 @@ const RegisterModal: FC = () => {
       stockPrice: stockPrice,
       dividend: dividend,
     });
+    try {
+      await setDoc(doc(db, 'stocks', data.stockCode), {
+        brand: data.brand,
+        stockCode: data.stockCode,
+        desiredYield: data.desiredYield,
+        stockPrice: stockPrice,
+        dividend: dividend,
+      });
+    } catch (error) {
+      console.log(error);
+    }
     onClose();
   };
 
