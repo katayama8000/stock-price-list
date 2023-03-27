@@ -102,6 +102,14 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Box minH="100vh">
+        <Button onClick={handleFetchStock} isLoading={isLoadingStock}>
+          株価を取得
+        </Button>
+        {stock && (
+          <Text>
+            株価 : {stock.stockPrice}円 | 配当金 : {stock.dividend}円
+          </Text>
+        )}
         <RegisterModal />
         {companyDataState.map((data, index) => (
           <StockCard
@@ -205,10 +213,30 @@ const RegisterModal: FC = () => {
     },
   });
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const handleFetchStock = async (stockCode: string) => {
+    console.log('fetch');
+    console.log(stockCode);
+    setIsLoading(true);
+    const res = await fetch(`/api/stock?code=${stockCode}`);
+    const { stockPrice, dividend }: TStock = await res.json();
+    setIsLoading(false);
+    return { stockPrice, dividend };
+  };
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const initialRef = useRef(null);
   const onSubmit = async (data: TSchema) => {
-    console.log(data);
+    const { stockPrice, dividend } = await handleFetchStock(data.stockCode);
+    console.log({
+      brand: data.brand,
+      stockCode: data.stockCode,
+      desiredYield: data.desiredYield,
+      stockPrice: stockPrice,
+      dividend: dividend,
+    });
+    onClose();
   };
 
   useEffect(() => {
@@ -290,6 +318,8 @@ const RegisterModal: FC = () => {
                 mr={3}
                 type="button"
                 onClick={handleSubmit(onSubmit)}
+                isLoading={isLoading}
+                loadingText="登録中"
               >
                 登録
               </Button>
