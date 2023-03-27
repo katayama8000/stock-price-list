@@ -28,11 +28,18 @@ import {
   PinInputField,
 } from '@chakra-ui/react';
 import Head from 'next/head';
-import { type FC, useState, useRef, useEffect } from 'react';
+import {
+  type FC,
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { doc, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 type TStock = {
@@ -49,77 +56,63 @@ type TCompany = {
 type TStockCard = TStock & TCompany;
 
 const STOCK_CODE = '8591';
-const HELLO_CODE = '5023';
-
-const dummy: TStockCard[] = [
-  {
-    brand: '東京海上日動火災保険',
-    stockPrice: 4000,
-    dividend: 222,
-    desiredYield: 2,
-    stockCode: '8591',
-  },
-  {
-    brand: '三菱ＵＦＪフィナンシャル',
-    stockPrice: 13050,
-    dividend: 100,
-    desiredYield: 2,
-    stockCode: '8306',
-  },
-];
 
 export default function Home() {
   const [stock, setStock] = useState<TStock | null>(null);
+  const [stocks, setStocks] = useState<TStockCard[]>([]);
   const [isLoadingStock, setIsLoadingStock] = useState<boolean>(false);
 
-  const handleFetchStock = async () => {
-    setIsLoadingStock(true);
-    const res = await fetch(`/api/stock?code=${STOCK_CODE}`);
-    const { stockPrice, dividend }: TStock = await res.json();
-    setStock({ stockPrice, dividend });
-    setIsLoadingStock(false);
+  // const handleFetchStock = async () => {
+  //   setIsLoadingStock(true);
+  //   const res = await fetch(`/api/stock?code=${STOCK_CODE}`);
+  //   const { stockPrice, dividend }: TStock = await res.json();
+  //   setStock({ stockPrice, dividend });
+  //   setIsLoadingStock(false);
+  // };
+
+  const fetchStockAll = async () => {
+    // firebaseからデータを取得
+    const snapshot = await getDocs(collection(db, 'stocks'));
+    const data = snapshot.docs.map((doc) => doc.data() as TStockCard);
+    setStocks(data);
   };
 
-  // const handleFetchHello = async () => {
-  //   const res = await fetch(`/api/hello?code=${HELLO_CODE}`);
-  //   const data = await res.json();
-  //   console.log(data);
-  // };
-
-  // const [companyDataState, setCompanyDataState] = useState<TStockCard[]>(dummy);
-
-  // const handleUpdateData = (index: number) => {
-  //   setCompanyDataState((prevState) => {
-  //     const newData = [...prevState];
-  //     newData[index].stockPrice = Math.round(Math.random() * 1000);
-  //     return newData;
-  //   });
-  // };
+  useEffect(() => {
+    fetchStockAll();
+  }, []);
 
   return (
     <>
       <Head>
         <title>stock</title>
-        <meta name="description" content="更新ボタンを設置したテーブル" />
+        <meta name="description" content="stock" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Box minH="100vh">
-        <Button onClick={handleFetchStock} isLoading={isLoadingStock}>
+        {/* <Button onClick={handleFetchStock} isLoading={isLoadingStock}>
           株価を取得
         </Button>
         {stock && (
           <Text>
             株価 : {stock.stockPrice}円 | 配当金 : {stock.dividend}円
           </Text>
-        )}
+        )} */}
         <RegisterModal />
-        {companyDataState.map((data, index) => (
-          <StockCard
-            key={data.brand}
-            {...data}
-            onUpdateData={() => handleUpdateData(index)}
-          />
-        ))}
+        {stocks !== undefined ? (
+          stocks.map((stock) => (
+            <StockCard
+              key={stock.stockCode}
+              brand={stock.brand}
+              stockPrice={stock.stockPrice}
+              dividend={stock.dividend}
+              desiredYield={stock.desiredYield}
+              stockCode={stock.stockCode}
+              onUpdateData={() => fetchStockAll()}
+            />
+          ))
+        ) : (
+          <Text>データがありません</Text>
+        )}
       </Box>
     </>
   );
@@ -137,34 +130,39 @@ export const StockCard: FC<Props> = ({
   desiredYield,
   stockCode,
 }) => {
-  const divYield: number = Math.round((dividend / stockPrice) * 100 * 10) / 10;
-  const desiredStockPrice: number =
-    Math.round(((stockPrice * divYield) / desiredYield) * 10) / 10;
+  const dividendYield = useMemo(() => {
+    return Math.round((dividend / stockPrice) * 100 * 10) / 10;
+  }, [dividend, stockPrice]);
+
+  const desiredPrice = useMemo(() => {
+    if (desiredYield === 0) {
+      return '---';
+    }
+    const price =
+      Math.round(((stockPrice * dividendYield) / desiredYield) * 10) / 10;
+    return `${price}円`;
+  }, [desiredYield, dividendYield, stockPrice]);
+
+  const yieldColor = dividendYield >= desiredYield ? 'green.100' : 'red.100';
+  const yieldText = `利回り : ${dividendYield}% | 希望利回り : ${desiredYield}%`;
 
   return (
     <Center>
-      <Box
-        bgColor={divYield >= desiredYield ? 'green.100' : 'red.100'}
-        rounded="md"
-        shadow="md"
-        width="80"
-        p="4"
-        m="2"
-      >
+      <Box bgColor={yieldColor} rounded="md" shadow="md" width="80" p="4" m="2">
         <Heading size="md">{brand}</Heading>
         <Stack divider={<StackDivider />} spacing="2" pt="2">
           <Text pt="2" fontSize="sm">
-            現在の株価 : {stockPrice}円 | 希望株価 :{desiredStockPrice}円
+            現在の株価 : {stockPrice}円 | 希望株価 : {desiredPrice}
           </Text>
           <Text pt="2" fontSize="sm">
-            利回り : {divYield}% | 希望利回り : {desiredYield}%
+            {yieldText}
           </Text>
           <Text pt="2" fontSize="sm">
             配当金 : {dividend}円
           </Text>
           <Flex pt="2">
             <Button
-              colorScheme={divYield >= desiredYield ? 'green' : 'red'}
+              colorScheme={dividendYield >= desiredYield ? 'green' : 'red'}
               variant="outline"
               w="100%"
               mx={1}
@@ -173,7 +171,7 @@ export const StockCard: FC<Props> = ({
             </Button>
             <Button
               onClick={onUpdateData}
-              colorScheme={divYield >= desiredYield ? 'green' : 'red'}
+              colorScheme={dividendYield >= desiredYield ? 'green' : 'red'}
               variant="outline"
               loadingText="更新中"
               isLoading={false}
@@ -217,15 +215,13 @@ const RegisterModal: FC = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleFetchStock = async (stockCode: string) => {
-    console.log('fetch');
-    console.log(stockCode);
+  const handleFetchStock = useCallback(async (stockCode: string) => {
     setIsLoading(true);
     const res = await fetch(`/api/stock?code=${stockCode}`);
     const { stockPrice, dividend }: TStock = await res.json();
     setIsLoading(false);
     return { stockPrice, dividend };
-  };
+  }, []);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const initialRef = useRef(null);
