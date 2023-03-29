@@ -54,28 +54,20 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-
-type TStock = {
-  stockPrice: number;
-  dividend: number;
-};
-
-type TCompany = {
-  brand: string;
-  desiredYield: number; // 希望配当金
-  stockCode: string; // 株コード
-};
-
-type TStockCard = TStock & TCompany;
-
-const STOCK_CODE = '8591';
+import { TStock, TStockCard } from '@/type/stock.model';
+import { useAtomValue, useSetAtom } from 'jotai';
+import {
+  getStockAtom,
+  setStockAtom,
+  fetchStockAllAtom,
+} from '@/state/stock.state';
 
 export default function Home() {
-  const [stock, setStock] = useState<TStock | null>(null);
-  const [stocks, setStocks] = useState<TStockCard[]>([]);
-  const [isLoadingStock, setIsLoadingStock] = useState<boolean>(false);
+  const stocks = useAtomValue(getStockAtom);
+  const fetchStockAll = useSetAtom(fetchStockAllAtom);
 
   // const handleFetchStock = async () => {
+  //   const STOCK_CODE = '8591';
   //   setIsLoadingStock(true);
   //   const res = await fetch(`/api/stock?code=${STOCK_CODE}`);
   //   const { stockPrice, dividend }: TStock = await res.json();
@@ -83,15 +75,10 @@ export default function Home() {
   //   setIsLoadingStock(false);
   // };
 
-  const fetchStockAll = async () => {
-    // firebaseからデータを取得
-    const snapshot = await getDocs(collection(db, 'stocks'));
-    const data = snapshot.docs.map((doc) => doc.data() as TStockCard);
-    setStocks(data);
-  };
-
   useEffect(() => {
-    fetchStockAll();
+    (async () => {
+      await fetchStockAll();
+    })();
   }, []);
 
   return (
@@ -201,16 +188,18 @@ export const StockCard: FC<TStockCardProps> = ({
   );
 };
 
-type TDeleteModal = {
+type TDeleteModalProps = {
   stockCode: string;
 };
 
-const DeleteModal: FC<TDeleteModal> = ({ stockCode }) => {
+const DeleteModal: FC<TDeleteModalProps> = ({ stockCode }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const fetchStockAll = useSetAtom(fetchStockAllAtom);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const handleDelete = async () => {
     try {
       await deleteDoc(doc(db, 'stocks', stockCode));
+      await fetchStockAll();
     } catch (e) {
       console.log(e);
     } finally {
@@ -253,6 +242,7 @@ const DeleteModal: FC<TDeleteModal> = ({ stockCode }) => {
 };
 
 const RegisterModal: FC = () => {
+  const fetchStockAll = useSetAtom(fetchStockAllAtom);
   const schema = z.object({
     brand: z.string().nonempty('銘柄を入力してください'),
     stockCode: z.string().length(4, { message: '4桁の数値を入力してください' }),
@@ -269,6 +259,7 @@ const RegisterModal: FC = () => {
     handleSubmit,
     formState: { errors },
     control,
+    reset,
   } = useForm<TSchema>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -280,10 +271,11 @@ const RegisterModal: FC = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleFetchStock = useCallback(async (stockCode: string) => {
+  const handleScrapeStock = useCallback(async (stockCode: string) => {
     setIsLoading(true);
     const res = await fetch(`/api/stock?code=${stockCode}`);
     const { stockPrice, dividend }: TStock = await res.json();
+
     setIsLoading(false);
     return { stockPrice, dividend };
   }, []);
@@ -291,7 +283,7 @@ const RegisterModal: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const initialRef = useRef(null);
   const onSubmit = async (data: TSchema) => {
-    const { stockPrice, dividend } = await handleFetchStock(data.stockCode);
+    const { stockPrice, dividend } = await handleScrapeStock(data.stockCode);
     console.log({
       brand: data.brand,
       stockCode: data.stockCode,
@@ -307,9 +299,16 @@ const RegisterModal: FC = () => {
         stockPrice: stockPrice,
         dividend: dividend,
       });
+      await fetchStockAll();
     } catch (error) {
       console.log(error);
+    } finally {
+      handleCloseModal();
     }
+  };
+
+  const handleCloseModal = () => {
+    reset();
     onClose();
   };
 
@@ -397,7 +396,7 @@ const RegisterModal: FC = () => {
               >
                 登録
               </Button>
-              <Button onClick={onClose}>戻る</Button>
+              <Button onClick={handleCloseModal}>戻る</Button>
             </ModalFooter>
           </ModalContent>
         </form>
