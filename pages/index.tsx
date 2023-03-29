@@ -26,6 +26,13 @@ import {
   FormErrorMessage,
   PinInput,
   PinInputField,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  AlertDialogCloseButton,
 } from '@chakra-ui/react';
 import Head from 'next/head';
 import {
@@ -39,7 +46,13 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  setDoc,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 type TStock = {
@@ -118,11 +131,11 @@ export default function Home() {
   );
 }
 
-type Props = {
+type TStockCardProps = {
   onUpdateData: () => void;
 } & TStockCard;
 
-export const StockCard: FC<Props> = ({
+export const StockCard: FC<TStockCardProps> = ({
   onUpdateData,
   brand,
   stockPrice,
@@ -180,10 +193,62 @@ export const StockCard: FC<Props> = ({
             >
               更新
             </Button>
+            <DeleteModal stockCode={stockCode} />
           </Flex>
         </Stack>
       </Box>
     </Center>
+  );
+};
+
+type TDeleteModal = {
+  stockCode: string;
+};
+
+const DeleteModal: FC<TDeleteModal> = ({ stockCode }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const handleDelete = async () => {
+    try {
+      await deleteDoc(doc(db, 'stocks', stockCode));
+    } catch (e) {
+      console.log(e);
+    } finally {
+      onClose();
+    }
+  };
+
+  return (
+    <>
+      <Button colorScheme="red" onClick={onOpen}>
+        削除
+      </Button>
+
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              銘柄の削除
+            </AlertDialogHeader>
+
+            <AlertDialogBody>本当に削除しますか？</AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose}>
+                もどる
+              </Button>
+              <Button colorScheme="red" onClick={handleDelete} ml={3}>
+                削除
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+    </>
   );
 };
 
