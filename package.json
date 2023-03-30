@@ -20,6 +20,7 @@
     "eslint-config-next": "13.2.4",
     "firebase": "^9.18.0",
     "framer-motion": "^10.8.4",
+    "jotai": "^2.0.3",
     "next": "13.2.4",
     "puppeteer": "^19.7.5",
     "react": "18.2.0",
