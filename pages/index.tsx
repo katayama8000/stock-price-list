@@ -240,10 +240,7 @@ const RegisterModal: FC = () => {
   const schema = z.object({
     brand: z.string().nonempty('銘柄を入力してください'),
     stockCode: z.string().length(4, { message: '4桁の数値を入力してください' }),
-    desiredYield: z
-      .number()
-      .min(0, { message: '0以上で入力してください' })
-      .max(99.9, { message: '100未満で入力してください' }),
+    desiredYield: z.string().transform((v) => Number(v)),
   });
 
   type TSchema = z.infer<typeof schema>;
