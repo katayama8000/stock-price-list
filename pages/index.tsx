@@ -46,21 +46,23 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  setDoc,
-} from 'firebase/firestore';
+import { deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { TStock, TStockCard } from '@/type/stock.model';
 import { useAtomValue, useSetAtom } from 'jotai';
-import {
-  getStockAtom,
-  setStockAtom,
-  fetchStockAllAtom,
-} from '@/state/stock.state';
+import { fetchStockAllAtom, getStockAtom } from '@/state/stock.state';
+
+type TStock = {
+  stockPrice: number;
+  dividend: number;
+};
+
+type TCompany = {
+  brand: string;
+  desiredYield: number; // 希望配当金
+  stockCode: string; // 株コード
+};
+
+type TStockCard = TStock & TCompany;
 
 export default function Home() {
   const stocks = useAtomValue(getStockAtom);
@@ -144,7 +146,6 @@ export const StockCard: FC<TStockCardProps> = ({
   }, [desiredYield, dividendYield, stockPrice]);
 
   const yieldColor = dividendYield >= desiredYield ? 'green.100' : 'red.100';
-  const yieldText = `利回り : ${dividendYield}% | 希望利回り : ${desiredYield}%`;
 
   return (
     <Center>
@@ -155,20 +156,13 @@ export const StockCard: FC<TStockCardProps> = ({
             現在の株価 : {stockPrice}円 | 希望株価 : {desiredPrice}
           </Text>
           <Text pt="2" fontSize="sm">
-            {yieldText}
+            利回り : {dividendYield}% | 希望利回り : {desiredYield}%
           </Text>
           <Text pt="2" fontSize="sm">
             配当金 : {dividend}円
           </Text>
           <Flex pt="2">
-            <Button
-              colorScheme={dividendYield >= desiredYield ? 'green' : 'red'}
-              variant="outline"
-              w="100%"
-              mx={1}
-            >
-              編集
-            </Button>
+            <EditModal desiredYield={desiredYield} stockCode={stockCode} />
             <Button
               onClick={onUpdateData}
               colorScheme={dividendYield >= desiredYield ? 'green' : 'red'}
@@ -400,6 +394,80 @@ const RegisterModal: FC = () => {
             </ModalFooter>
           </ModalContent>
         </form>
+      </Modal>
+    </>
+  );
+};
+
+type TEditModalProps = {
+  desiredYield: number;
+  stockCode: string;
+};
+
+const EditModal: FC<TEditModalProps> = ({ desiredYield, stockCode }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const fetchStockAll = useSetAtom(fetchStockAllAtom);
+
+  const initialRef = useRef(null);
+  const finalRef = useRef(null);
+
+  const [desiredYieldValue, setDesiredYieldValue] =
+    useState<number>(desiredYield);
+
+  const handleEditDesiredYield = async () => {
+    try {
+      await updateDoc(doc(db, 'stocks', stockCode), {
+        desiredYield: desiredYieldValue,
+      });
+      await fetchStockAll();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      onClose();
+    }
+  };
+
+  return (
+    <>
+      <Button onClick={onOpen}>編集</Button>
+
+      <Modal
+        initialFocusRef={initialRef}
+        finalFocusRef={finalRef}
+        isOpen={isOpen}
+        onClose={onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>希望利回り編集</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl>
+              <FormLabel>希望利回り</FormLabel>
+              <NumberInput
+                precision={1}
+                step={0.1}
+                value={desiredYieldValue}
+                onChange={(valueString) => {
+                  setDesiredYieldValue(Number(valueString));
+                }}
+              >
+                <NumberInputField placeholder="0.0" />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleEditDesiredYield}>
+              編集
+            </Button>
+            <Button onClick={onClose}>戻る</Button>
+          </ModalFooter>
+        </ModalContent>
       </Modal>
     </>
   );
