@@ -159,6 +159,8 @@ export const StockCard: FC<TStockCardProps> = ({
   const yieldColor = dividendYield >= desiredYield ? 'green.100' : 'red.100';
   const yieldText = `利回り : ${dividendYield}% | 希望利回り : ${desiredYield}%`;
 
+  const [isEdit, setIsEdit] = useState<boolean>(false);
+
   return (
     <Center>
       <Box bgColor={yieldColor} rounded="md" shadow="md" width="80" p="4" m="2">
@@ -179,6 +181,7 @@ export const StockCard: FC<TStockCardProps> = ({
               variant="outline"
               w="100%"
               mx={1}
+              onClick={() => setIsEdit(!isEdit)}
             >
               編集
             </Button>
