@@ -48,7 +48,7 @@ export const RegisterModal: FC = () => {
 
   const {
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     control,
     reset,
   } = useForm<TSchema>({
@@ -59,10 +59,7 @@ export const RegisterModal: FC = () => {
     },
   });
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
   const handleScrapeStock = useCallback(async (stockCode: string) => {
-    setIsLoading(true);
     try {
       const res = await fetch(`/api/stock?code=${stockCode}`);
       const { stockPrice, dividend, brand }: TStock = await res.json();
@@ -76,8 +73,6 @@ export const RegisterModal: FC = () => {
         duration: 5000,
         isClosable: true,
       });
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -187,7 +182,7 @@ export const RegisterModal: FC = () => {
                 mr={3}
                 type="button"
                 onClick={handleSubmit(onSubmit)}
-                isLoading={isLoading}
+                isLoading={isSubmitting}
                 loadingText="登録中"
               >
                 登録
