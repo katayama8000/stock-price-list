@@ -218,10 +218,10 @@ const RegisterModal: FC = () => {
     } catch (error) {
       console.log(error);
       toast({
-        title: 'Account created.',
-        description: "We've created your account for you.",
-        status: 'success',
-        duration: 9000,
+        title: 'エラーが発生しました',
+        description: '入力した銘柄コードを確認してください',
+        status: 'error',
+        duration: 5000,
         isClosable: true,
       });
     } finally {
