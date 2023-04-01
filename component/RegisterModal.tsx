@@ -35,7 +35,11 @@ export const RegisterModal: FC = () => {
   const fetchStockAll = useSetAtom(fetchStockAllAtom);
   const schema = z.object({
     stockCode: z.string().length(4, { message: '4桁の数値を入力してください' }),
-    desiredYield: z.string().transform((v) => Number(v)),
+    desiredYield: z
+      .union([z.string(), z.number()]) // 文字列または数値を受け入れる
+      .transform((value) => {
+        return Number(value);
+      }),
   });
 
   type TSchema = z.infer<typeof schema>;
