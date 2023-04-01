@@ -33,6 +33,7 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   AlertDialogCloseButton,
+  useToast,
 } from '@chakra-ui/react';
 import Head from 'next/head';
 import {
@@ -181,6 +182,7 @@ export const StockCard: FC<TStockCardProps> = ({
 
 // 銘柄登録モーダル
 const RegisterModal: FC = () => {
+  const toast = useToast();
   const fetchStockAll = useSetAtom(fetchStockAllAtom);
   const schema = z.object({
     brand: z.string().nonempty('銘柄を入力してください'),
@@ -209,31 +211,43 @@ const RegisterModal: FC = () => {
 
   const handleScrapeStock = useCallback(async (stockCode: string) => {
     setIsLoading(true);
-    const res = await fetch(`/api/stock?code=${stockCode}`);
-    const { stockPrice, dividend }: TStock = await res.json();
-
-    setIsLoading(false);
-    return { stockPrice, dividend };
+    try {
+      const res = await fetch(`/api/stock?code=${stockCode}`);
+      const { stockPrice, dividend }: TStock = await res.json();
+      return { stockPrice, dividend };
+    } catch (error) {
+      console.log(error);
+      toast({
+        title: 'Account created.',
+        description: "We've created your account for you.",
+        status: 'success',
+        duration: 9000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const initialRef = useRef(null);
   const onSubmit = async (data: TSchema) => {
-    const { stockPrice, dividend } = await handleScrapeStock(data.stockCode);
+    const res = await handleScrapeStock(data.stockCode);
+    if (res === undefined) return;
     console.log({
       brand: data.brand,
       stockCode: data.stockCode,
       desiredYield: data.desiredYield,
-      stockPrice: stockPrice,
-      dividend: dividend,
+      stockPrice: res.stockPrice,
+      dividend: res.dividend,
     });
     try {
       await setDoc(doc(db, 'stocks', data.stockCode), {
         brand: data.brand,
         stockCode: data.stockCode,
         desiredYield: data.desiredYield,
-        stockPrice: stockPrice,
-        dividend: dividend,
+        stockPrice: res.stockPrice,
+        dividend: res.dividend,
       });
       await fetchStockAll();
     } catch (error) {
