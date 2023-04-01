@@ -3,54 +3,22 @@ import {
   Button,
   Center,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
-  Input,
   Stack,
   StackDivider,
   Text,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
-  FormErrorMessage,
-  PinInput,
-  PinInputField,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
-  AlertDialogCloseButton,
   useToast,
 } from '@chakra-ui/react';
 import Head from 'next/head';
-import {
-  type FC,
-  useState,
-  useRef,
-  useEffect,
-  useMemo,
-  useCallback,
-} from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { type FC, useState, useEffect, useMemo } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { fetchStockAllAtom, getStockAtom } from '@/state/stock.state';
+// components
+import { RegisterModal } from '@/component/RegisterModal';
+import { EditModal } from '@/component/EditModal';
+import { DeleteModal } from '@/component/deleteModal';
 
 type TStock = {
   stockPrice: number;
@@ -92,14 +60,6 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Box minH="100vh">
-        {/* <Button onClick={handleFetchStock} isLoading={isLoadingStock}>
-          株価を取得
-        </Button>
-        {stock && (
-          <Text>
-            株価 : {stock.stockPrice}円 | 配当金 : {stock.dividend}円
-          </Text>
-        )} */}
         <Center m={1}>
           <RegisterModal />
         </Center>
@@ -131,6 +91,9 @@ export const StockCard: FC<TStockCardProps> = ({
   desiredYield,
   stockCode,
 }) => {
+  const fetchStockAll = useSetAtom(fetchStockAllAtom);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const toast = useToast();
   const dividendYield = useMemo(() => {
     return Math.round((dividend / stockPrice) * 100 * 10) / 10;
   }, [dividend, stockPrice]);
@@ -145,6 +108,35 @@ export const StockCard: FC<TStockCardProps> = ({
   }, [desiredYield, dividendYield, stockPrice]);
 
   const yieldColor = dividendYield >= desiredYield ? 'green.100' : 'red.100';
+
+  const handleUpdate = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/stock?code=${stockCode}`);
+      const { stockPrice, dividend }: TStock = await res.json();
+      await updateDoc(doc(db, 'stocks', stockCode), {
+        stockPrice,
+        dividend,
+      });
+      await fetchStockAll();
+      toast({
+        title: '更新しました',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (e) {
+      console.log(e);
+      toast({
+        title: '更新に失敗しました',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Center>
@@ -165,9 +157,10 @@ export const StockCard: FC<TStockCardProps> = ({
               colorScheme={dividendYield >= desiredYield ? 'green' : 'red'}
               variant="outline"
               loadingText="更新中"
-              isLoading={false}
+              isLoading={isLoading}
               w="100%"
               mx={1}
+              onClick={handleUpdate}
             >
               更新
             </Button>
@@ -177,311 +170,5 @@ export const StockCard: FC<TStockCardProps> = ({
         </Stack>
       </Box>
     </Center>
-  );
-};
-
-// 銘柄登録モーダル
-const RegisterModal: FC = () => {
-  const toast = useToast();
-  const fetchStockAll = useSetAtom(fetchStockAllAtom);
-  const schema = z.object({
-    brand: z.string().nonempty('銘柄を入力してください'),
-    stockCode: z.string().length(4, { message: '4桁の数値を入力してください' }),
-    desiredYield: z.string().transform((v) => Number(v)),
-  });
-
-  type TSchema = z.infer<typeof schema>;
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    control,
-    reset,
-  } = useForm<TSchema>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      brand: '',
-      stockCode: '',
-      desiredYield: 0,
-    },
-  });
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const handleScrapeStock = useCallback(async (stockCode: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/stock?code=${stockCode}`);
-      const { stockPrice, dividend }: TStock = await res.json();
-      return { stockPrice, dividend };
-    } catch (error) {
-      console.log(error);
-      toast({
-        title: 'エラーが発生しました',
-        description: '入力した銘柄コードを確認してください',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const initialRef = useRef(null);
-  const onSubmit = async (data: TSchema) => {
-    const res = await handleScrapeStock(data.stockCode);
-    if (res === undefined) return;
-    console.log({
-      brand: data.brand,
-      stockCode: data.stockCode,
-      desiredYield: data.desiredYield,
-      stockPrice: res.stockPrice,
-      dividend: res.dividend,
-    });
-    try {
-      await setDoc(doc(db, 'stocks', data.stockCode), {
-        brand: data.brand,
-        stockCode: data.stockCode,
-        desiredYield: data.desiredYield,
-        stockPrice: res.stockPrice,
-        dividend: res.dividend,
-      });
-      await fetchStockAll();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      handleCloseModal();
-    }
-  };
-
-  const handleCloseModal = () => {
-    reset();
-    onClose();
-  };
-
-  useEffect(() => {
-    console.log(errors);
-  }, [errors]);
-
-  return (
-    <>
-      <Button onClick={onOpen} colorScheme={'purple'}>
-        新規銘柄登録
-      </Button>
-
-      <Modal initialFocusRef={initialRef} isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <ModalContent>
-            <ModalHeader>新規銘柄登録</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody pb={6}>
-              <FormControl id="brand" isInvalid={Boolean(errors.brand)}>
-                <FormLabel>銘柄</FormLabel>
-                <Input placeholder="トヨタ自動車" {...register('brand')} />
-                <FormErrorMessage>
-                  {errors.brand && errors.brand?.message}
-                </FormErrorMessage>
-              </FormControl>
-
-              <FormControl
-                mt={4}
-                id="stockCode"
-                isInvalid={Boolean(errors.stockCode)}
-              >
-                <FormLabel>銘柄コード</FormLabel>
-                <Controller
-                  name="stockCode"
-                  control={control}
-                  render={({ field: { ref, ...rest } }) => (
-                    <PinInput otp {...rest}>
-                      <PinInputField />
-                      <PinInputField />
-                      <PinInputField />
-                      <PinInputField />
-                    </PinInput>
-                  )}
-                />
-                <FormErrorMessage>
-                  {errors.stockCode && errors.stockCode?.message}
-                </FormErrorMessage>
-              </FormControl>
-
-              <FormControl
-                mt={4}
-                id="desiredYield"
-                isInvalid={Boolean(errors.desiredYield)}
-              >
-                <FormLabel>希望利回り(後で入力でも可)</FormLabel>
-                <Controller
-                  name="desiredYield"
-                  control={control}
-                  render={({ field }) => (
-                    <NumberInput precision={1} step={0.1}>
-                      <NumberInputField placeholder="0.0" {...field} />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
-                      </NumberInputStepper>
-                    </NumberInput>
-                  )}
-                />
-                <FormErrorMessage>
-                  {errors.desiredYield && errors.desiredYield?.message}
-                </FormErrorMessage>
-              </FormControl>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button
-                colorScheme="blue"
-                mr={3}
-                type="button"
-                onClick={handleSubmit(onSubmit)}
-                isLoading={isLoading}
-                loadingText="登録中"
-              >
-                登録
-              </Button>
-              <Button onClick={handleCloseModal}>戻る</Button>
-            </ModalFooter>
-          </ModalContent>
-        </form>
-      </Modal>
-    </>
-  );
-};
-
-// 編集モーダル
-type TEditModalProps = {
-  desiredYield: number;
-  stockCode: string;
-};
-
-const EditModal: FC<TEditModalProps> = ({ desiredYield, stockCode }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const fetchStockAll = useSetAtom(fetchStockAllAtom);
-
-  const initialRef = useRef(null);
-  const finalRef = useRef(null);
-
-  const [desiredYieldValue, setDesiredYieldValue] =
-    useState<number>(desiredYield);
-
-  const handleEditDesiredYield = async () => {
-    try {
-      await updateDoc(doc(db, 'stocks', stockCode), {
-        desiredYield: desiredYieldValue,
-      });
-      await fetchStockAll();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      onClose();
-    }
-  };
-
-  return (
-    <>
-      <Button onClick={onOpen} variant="outline" colorScheme={'primary'} mx={1}>
-        編集
-      </Button>
-
-      <Modal
-        initialFocusRef={initialRef}
-        finalFocusRef={finalRef}
-        isOpen={isOpen}
-        onClose={onClose}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>希望利回り編集</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl>
-              <FormLabel>希望利回り</FormLabel>
-              <NumberInput
-                precision={1}
-                step={0.1}
-                value={desiredYieldValue}
-                onChange={(valueString) => {
-                  setDesiredYieldValue(Number(valueString));
-                }}
-              >
-                <NumberInputField placeholder="0.0" />
-                <NumberInputStepper>
-                  <NumberIncrementStepper />
-                  <NumberDecrementStepper />
-                </NumberInputStepper>
-              </NumberInput>
-            </FormControl>
-          </ModalBody>
-
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleEditDesiredYield}>
-              編集
-            </Button>
-            <Button onClick={onClose}>戻る</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </>
-  );
-};
-
-// 削除モーダル
-type TDeleteModalProps = {
-  stockCode: string;
-};
-
-const DeleteModal: FC<TDeleteModalProps> = ({ stockCode }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const fetchStockAll = useSetAtom(fetchStockAllAtom);
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  const handleDelete = async () => {
-    try {
-      await deleteDoc(doc(db, 'stocks', stockCode));
-      await fetchStockAll();
-    } catch (e) {
-      console.log(e);
-    } finally {
-      onClose();
-    }
-  };
-
-  return (
-    <>
-      <Button onClick={onOpen} variant="outline" colorScheme={'primary'} mx={1}>
-        削除
-      </Button>
-
-      <AlertDialog
-        isOpen={isOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onClose}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              銘柄の削除
-            </AlertDialogHeader>
-
-            <AlertDialogBody>本当に削除しますか？</AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose}>
-                もどる
-              </Button>
-              <Button colorScheme="red" onClick={handleDelete} ml={3}>
-                削除
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
-    </>
   );
 };
