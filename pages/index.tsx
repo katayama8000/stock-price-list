@@ -33,6 +33,7 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   AlertDialogCloseButton,
+  useToast,
 } from '@chakra-ui/react';
 import Head from 'next/head';
 import {
@@ -99,7 +100,9 @@ export default function Home() {
             株価 : {stock.stockPrice}円 | 配当金 : {stock.dividend}円
           </Text>
         )} */}
-        <RegisterModal />
+        <Center m={1}>
+          <RegisterModal />
+        </Center>
         {stocks !== undefined ? (
           stocks.map((stock) => (
             <StockCard
@@ -109,7 +112,6 @@ export default function Home() {
               dividend={stock.dividend}
               desiredYield={stock.desiredYield}
               stockCode={stock.stockCode}
-              onUpdateData={() => fetchStockAll()}
             />
           ))
         ) : (
@@ -120,12 +122,9 @@ export default function Home() {
   );
 }
 
-type TStockCardProps = {
-  onUpdateData: () => void;
-} & TStockCard;
+type TStockCardProps = TStockCard;
 
 export const StockCard: FC<TStockCardProps> = ({
-  onUpdateData,
   brand,
   stockPrice,
   dividend,
@@ -162,9 +161,7 @@ export const StockCard: FC<TStockCardProps> = ({
             配当金 : {dividend}円
           </Text>
           <Flex pt="2">
-            <EditModal desiredYield={desiredYield} stockCode={stockCode} />
             <Button
-              onClick={onUpdateData}
               colorScheme={dividendYield >= desiredYield ? 'green' : 'red'}
               variant="outline"
               loadingText="更新中"
@@ -174,6 +171,7 @@ export const StockCard: FC<TStockCardProps> = ({
             >
               更新
             </Button>
+            <EditModal desiredYield={desiredYield} stockCode={stockCode} />
             <DeleteModal stockCode={stockCode} />
           </Flex>
         </Stack>
@@ -182,60 +180,9 @@ export const StockCard: FC<TStockCardProps> = ({
   );
 };
 
-type TDeleteModalProps = {
-  stockCode: string;
-};
-
-const DeleteModal: FC<TDeleteModalProps> = ({ stockCode }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const fetchStockAll = useSetAtom(fetchStockAllAtom);
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  const handleDelete = async () => {
-    try {
-      await deleteDoc(doc(db, 'stocks', stockCode));
-      await fetchStockAll();
-    } catch (e) {
-      console.log(e);
-    } finally {
-      onClose();
-    }
-  };
-
-  return (
-    <>
-      <Button colorScheme="red" onClick={onOpen}>
-        削除
-      </Button>
-
-      <AlertDialog
-        isOpen={isOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={onClose}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              銘柄の削除
-            </AlertDialogHeader>
-
-            <AlertDialogBody>本当に削除しますか？</AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose}>
-                もどる
-              </Button>
-              <Button colorScheme="red" onClick={handleDelete} ml={3}>
-                削除
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
-    </>
-  );
-};
-
+// 銘柄登録モーダル
 const RegisterModal: FC = () => {
+  const toast = useToast();
   const fetchStockAll = useSetAtom(fetchStockAllAtom);
   const schema = z.object({
     brand: z.string().nonempty('銘柄を入力してください'),
@@ -264,31 +211,43 @@ const RegisterModal: FC = () => {
 
   const handleScrapeStock = useCallback(async (stockCode: string) => {
     setIsLoading(true);
-    const res = await fetch(`/api/stock?code=${stockCode}`);
-    const { stockPrice, dividend }: TStock = await res.json();
-
-    setIsLoading(false);
-    return { stockPrice, dividend };
+    try {
+      const res = await fetch(`/api/stock?code=${stockCode}`);
+      const { stockPrice, dividend }: TStock = await res.json();
+      return { stockPrice, dividend };
+    } catch (error) {
+      console.log(error);
+      toast({
+        title: 'Account created.',
+        description: "We've created your account for you.",
+        status: 'success',
+        duration: 9000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const initialRef = useRef(null);
   const onSubmit = async (data: TSchema) => {
-    const { stockPrice, dividend } = await handleScrapeStock(data.stockCode);
+    const res = await handleScrapeStock(data.stockCode);
+    if (res === undefined) return;
     console.log({
       brand: data.brand,
       stockCode: data.stockCode,
       desiredYield: data.desiredYield,
-      stockPrice: stockPrice,
-      dividend: dividend,
+      stockPrice: res.stockPrice,
+      dividend: res.dividend,
     });
     try {
       await setDoc(doc(db, 'stocks', data.stockCode), {
         brand: data.brand,
         stockCode: data.stockCode,
         desiredYield: data.desiredYield,
-        stockPrice: stockPrice,
-        dividend: dividend,
+        stockPrice: res.stockPrice,
+        dividend: res.dividend,
       });
       await fetchStockAll();
     } catch (error) {
@@ -396,6 +355,7 @@ const RegisterModal: FC = () => {
   );
 };
 
+// 編集モーダル
 type TEditModalProps = {
   desiredYield: number;
   stockCode: string;
@@ -426,7 +386,9 @@ const EditModal: FC<TEditModalProps> = ({ desiredYield, stockCode }) => {
 
   return (
     <>
-      <Button onClick={onOpen}>編集</Button>
+      <Button onClick={onOpen} variant="outline" colorScheme={'primary'} mx={1}>
+        編集
+      </Button>
 
       <Modal
         initialFocusRef={initialRef}
@@ -466,6 +428,60 @@ const EditModal: FC<TEditModalProps> = ({ desiredYield, stockCode }) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+    </>
+  );
+};
+
+// 削除モーダル
+type TDeleteModalProps = {
+  stockCode: string;
+};
+
+const DeleteModal: FC<TDeleteModalProps> = ({ stockCode }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const fetchStockAll = useSetAtom(fetchStockAllAtom);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const handleDelete = async () => {
+    try {
+      await deleteDoc(doc(db, 'stocks', stockCode));
+      await fetchStockAll();
+    } catch (e) {
+      console.log(e);
+    } finally {
+      onClose();
+    }
+  };
+
+  return (
+    <>
+      <Button onClick={onOpen} variant="outline" colorScheme={'primary'} mx={1}>
+        削除
+      </Button>
+
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              銘柄の削除
+            </AlertDialogHeader>
+
+            <AlertDialogBody>本当に削除しますか？</AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose}>
+                もどる
+              </Button>
+              <Button colorScheme="red" onClick={handleDelete} ml={3}>
+                削除
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </>
   );
 };
