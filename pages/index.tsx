@@ -122,7 +122,7 @@ export const StockCard: FC<TStockCardProps> = ({
       await updateDoc(doc(db, 'stocks', stockCode), {
         stockPrice,
         dividend,
-        update: dayjs().format('YYYY/MM/DD HH:mm'),
+        update: dayjs().format('YYYY-MM-DD HH:mm'),
       });
       await fetchStockAll();
       toast({
