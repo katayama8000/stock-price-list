@@ -29,6 +29,8 @@ import { useSetAtom } from 'jotai';
 import { FC, useState, useCallback, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ja';
 
 export const RegisterModal: FC = () => {
   const toast = useToast();
@@ -90,6 +92,7 @@ export const RegisterModal: FC = () => {
       desiredYield: data.desiredYield,
       stockPrice: res.stockPrice,
       dividend: res.dividend,
+      update: dayjs().locale('ja').format('YYYY/MM/DD/HH:mm'),
     });
     try {
       await setDoc(doc(db, 'stocks', data.stockCode), {
@@ -98,6 +101,7 @@ export const RegisterModal: FC = () => {
         desiredYield: data.desiredYield,
         stockPrice: res.stockPrice,
         dividend: res.dividend,
+        update: dayjs().locale('ja').format('YYYY/MM/DD/HH:mm'),
       });
       await fetchStockAll();
     } catch (error) {
