@@ -26,11 +26,12 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { setDoc, doc } from 'firebase/firestore';
 import { useSetAtom } from 'jotai';
-import { FC, useState, useCallback, useRef, useEffect } from 'react';
+import { FC, useCallback, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ja';
+import { formatJT } from '@/constant/format.const';
 
 export const RegisterModal: FC = () => {
   const toast = useToast();
@@ -48,7 +49,7 @@ export const RegisterModal: FC = () => {
 
   const {
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     control,
     reset,
   } = useForm<TSchema>({
@@ -59,10 +60,7 @@ export const RegisterModal: FC = () => {
     },
   });
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
   const handleScrapeStock = useCallback(async (stockCode: string) => {
-    setIsLoading(true);
     try {
       const res = await fetch(`/api/stock?code=${stockCode}`);
       const { stockPrice, dividend, brand }: TStock = await res.json();
@@ -76,8 +74,6 @@ export const RegisterModal: FC = () => {
         duration: 5000,
         isClosable: true,
       });
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -92,7 +88,7 @@ export const RegisterModal: FC = () => {
       desiredYield: data.desiredYield,
       stockPrice: res.stockPrice,
       dividend: res.dividend,
-      update: dayjs().locale('ja').format('YYYY-MM-DD HH:mm'),
+      update: dayjs().locale('ja').format(formatJT),
     });
     try {
       await setDoc(doc(db, 'stocks', data.stockCode), {
@@ -101,11 +97,18 @@ export const RegisterModal: FC = () => {
         desiredYield: data.desiredYield,
         stockPrice: res.stockPrice,
         dividend: res.dividend,
-        update: dayjs().locale('ja').format('YYYY-MM-DD HH:mm'),
+        update: dayjs().locale('ja').format(formatJT),
       });
       await fetchStockAll();
     } catch (error) {
       console.log(error);
+      toast({
+        title: 'エラーが発生しました',
+        description: '入力した銘柄コードを確認してください',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       handleCloseModal();
     }
@@ -187,7 +190,7 @@ export const RegisterModal: FC = () => {
                 mr={3}
                 type="button"
                 onClick={handleSubmit(onSubmit)}
-                isLoading={isLoading}
+                isLoading={isSubmitting}
                 loadingText="登録中"
               >
                 登録

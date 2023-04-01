@@ -20,21 +20,10 @@ import 'dayjs/locale/ja';
 // components
 import { RegisterModal } from '@/component/RegisterModal';
 import { EditModal } from '@/component/EditModal';
-import { DeleteModal } from '@/component/deleteModal';
-
-type TStock = {
-  stockPrice: number;
-  dividend: number;
-};
-
-type TCompany = {
-  brand: string;
-  desiredYield: number; // 希望配当金
-  stockCode: string; // 株コード
-  update: string; // 更新日
-};
-
-type TStockCard = TStock & TCompany;
+import { DeleteModal } from '@/component/DeleteModal';
+// type
+import type { TStock, TStockCard } from '@/type/stock.model';
+import { formatJT } from '@/constant/format.const';
 
 export default function Home() {
   const stocks = useAtomValue(getStockAtom);
@@ -122,7 +111,7 @@ export const StockCard: FC<TStockCardProps> = ({
       await updateDoc(doc(db, 'stocks', stockCode), {
         stockPrice,
         dividend,
-        update: dayjs().format('YYYY-MM-DD HH:mm'),
+        update: dayjs().locale('ja').format(formatJT),
       });
       await fetchStockAll();
       toast({
