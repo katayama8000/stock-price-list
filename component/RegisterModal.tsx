@@ -26,7 +26,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { setDoc, doc } from 'firebase/firestore';
 import { useSetAtom } from 'jotai';
-import { FC, useState, useCallback, useRef, useEffect } from 'react';
+import { FC, useCallback, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import dayjs from 'dayjs';
