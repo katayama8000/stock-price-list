@@ -15,6 +15,8 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { fetchStockAllAtom, getStockAtom } from '@/state/stock.state';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ja';
 // components
 import { RegisterModal } from '@/component/RegisterModal';
 import { EditModal } from '@/component/EditModal';
@@ -29,6 +31,7 @@ type TCompany = {
   brand: string;
   desiredYield: number; // 希望配当金
   stockCode: string; // 株コード
+  update: string; // 更新日
 };
 
 type TStockCard = TStock & TCompany;
@@ -72,6 +75,7 @@ export default function Home() {
               dividend={stock.dividend}
               desiredYield={stock.desiredYield}
               stockCode={stock.stockCode}
+              update={stock.update}
             />
           ))
         ) : (
@@ -90,6 +94,7 @@ export const StockCard: FC<TStockCardProps> = ({
   dividend,
   desiredYield,
   stockCode,
+  update,
 }) => {
   const fetchStockAll = useSetAtom(fetchStockAllAtom);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -117,6 +122,7 @@ export const StockCard: FC<TStockCardProps> = ({
       await updateDoc(doc(db, 'stocks', stockCode), {
         stockPrice,
         dividend,
+        update: dayjs().format('YYYY/MM/DD HH:mm'),
       });
       await fetchStockAll();
       toast({
@@ -151,6 +157,9 @@ export const StockCard: FC<TStockCardProps> = ({
           </Text>
           <Text pt="2" fontSize="sm">
             配当金 : {dividend}円
+          </Text>
+          <Text pt="2" fontSize="sm">
+            最終更新時間 : {update}
           </Text>
           <Flex pt="2">
             <Button

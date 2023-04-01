@@ -92,7 +92,7 @@ export const RegisterModal: FC = () => {
       desiredYield: data.desiredYield,
       stockPrice: res.stockPrice,
       dividend: res.dividend,
-      update: dayjs().locale('ja').format('YYYY/MM/DD/HH:mm'),
+      update: dayjs().locale('ja').format('YYYY-MM-DD HH:mm'),
     });
     try {
       await setDoc(doc(db, 'stocks', data.stockCode), {
@@ -101,7 +101,7 @@ export const RegisterModal: FC = () => {
         desiredYield: data.desiredYield,
         stockPrice: res.stockPrice,
         dividend: res.dividend,
-        update: dayjs().locale('ja').format('YYYY/MM/DD/HH:mm'),
+        update: dayjs().locale('ja').format('YYYY-MM-DD HH:mm'),
       });
       await fetchStockAll();
     } catch (error) {
