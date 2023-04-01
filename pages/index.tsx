@@ -131,6 +131,9 @@ export const StockCard: FC<TStockCardProps> = ({
   desiredYield,
   stockCode,
 }) => {
+  const fetchStockAll = useSetAtom(fetchStockAllAtom);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const toast = useToast();
   const dividendYield = useMemo(() => {
     return Math.round((dividend / stockPrice) * 100 * 10) / 10;
   }, [dividend, stockPrice]);
@@ -145,6 +148,35 @@ export const StockCard: FC<TStockCardProps> = ({
   }, [desiredYield, dividendYield, stockPrice]);
 
   const yieldColor = dividendYield >= desiredYield ? 'green.100' : 'red.100';
+
+  const handleUpdate = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/stock?code=${stockCode}`);
+      const { stockPrice, dividend }: TStock = await res.json();
+      await updateDoc(doc(db, 'stocks', stockCode), {
+        stockPrice,
+        dividend,
+      });
+      await fetchStockAll();
+      toast({
+        title: '更新しました',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (e) {
+      console.log(e);
+      toast({
+        title: '更新に失敗しました',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Center>
@@ -165,9 +197,10 @@ export const StockCard: FC<TStockCardProps> = ({
               colorScheme={dividendYield >= desiredYield ? 'green' : 'red'}
               variant="outline"
               loadingText="更新中"
-              isLoading={false}
+              isLoading={isLoading}
               w="100%"
               mx={1}
+              onClick={handleUpdate}
             >
               更新
             </Button>
