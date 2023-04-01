@@ -92,14 +92,6 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Box minH="100vh">
-        {/* <Button onClick={handleFetchStock} isLoading={isLoadingStock}>
-          株価を取得
-        </Button>
-        {stock && (
-          <Text>
-            株価 : {stock.stockPrice}円 | 配当金 : {stock.dividend}円
-          </Text>
-        )} */}
         <Center m={1}>
           <RegisterModal />
         </Center>
