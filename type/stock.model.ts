@@ -1,6 +1,7 @@
 type TStock = {
   stockPrice: number;
   dividend: number;
+  brand: string;
 };
 
 type TCompany = {

@@ -1,7 +1,7 @@
 import { db } from '@/lib/firebase';
 import { TStockCard } from '@/type/stock.model';
 import { collection, getDocs } from 'firebase/firestore';
-import { atom, useAtom } from 'jotai';
+import { atom } from 'jotai';
 
 export const stockAtom = atom<TStockCard[]>([]);
 export const getStockAtom = atom((get) => get(stockAtom));

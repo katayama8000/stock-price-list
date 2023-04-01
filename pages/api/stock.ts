@@ -6,6 +6,7 @@ type Response =
   | {
       stockPrice: number;
       dividend: number;
+      brand: string;
     }
   | {
       error: string;
@@ -18,7 +19,6 @@ export default async function handler(
   console.log(process.env.NEXT_PUBLIC_USERNAME);
   console.log(process.env.NEXT_PUBLIC_PASSWORD);
 
-  // const code = 8591;
   const { code } = req.query;
   const { NEXT_PUBLIC_USERNAME, NEXT_PUBLIC_PASSWORD } = process.env;
   if (!code) {
@@ -48,6 +48,12 @@ export default async function handler(
     ]);
     console.log(`ページ遷移成功`);
 
+    // コードに紐づく銘柄を取得する
+    // <h3 class="name">日産科学<h3>
+    const brand = await page.$eval('h3.name', (el) => el.innerText);
+
+    console.log(`銘柄名は${brand}です。`);
+
     // 現在の株価を取得する
     const currentValue = await page.$eval(
       'div.label + span',
@@ -75,6 +81,7 @@ export default async function handler(
     return res.status(200).json({
       stockPrice: parseFloat(currentValue.replace(/,/g, '')),
       dividend: Number(text.slice(0, -1)),
+      brand,
     });
   } catch (error) {
     console.error(error);

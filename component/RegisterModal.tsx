@@ -13,7 +13,6 @@ import {
   ModalBody,
   FormControl,
   FormLabel,
-  Input,
   FormErrorMessage,
   PinInput,
   PinInputField,
@@ -35,7 +34,6 @@ export const RegisterModal: FC = () => {
   const toast = useToast();
   const fetchStockAll = useSetAtom(fetchStockAllAtom);
   const schema = z.object({
-    brand: z.string().nonempty('銘柄を入力してください'),
     stockCode: z.string().length(4, { message: '4桁の数値を入力してください' }),
     desiredYield: z.string().transform((v) => Number(v)),
   });
@@ -43,7 +41,6 @@ export const RegisterModal: FC = () => {
   type TSchema = z.infer<typeof schema>;
 
   const {
-    register,
     handleSubmit,
     formState: { errors },
     control,
@@ -51,7 +48,6 @@ export const RegisterModal: FC = () => {
   } = useForm<TSchema>({
     resolver: zodResolver(schema),
     defaultValues: {
-      brand: '',
       stockCode: '',
       desiredYield: 0,
     },
@@ -63,8 +59,8 @@ export const RegisterModal: FC = () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/stock?code=${stockCode}`);
-      const { stockPrice, dividend }: TStock = await res.json();
-      return { stockPrice, dividend };
+      const { stockPrice, dividend, brand }: TStock = await res.json();
+      return { stockPrice, dividend, brand };
     } catch (error) {
       console.log(error);
       toast({
@@ -85,7 +81,7 @@ export const RegisterModal: FC = () => {
     const res = await handleScrapeStock(data.stockCode);
     if (res === undefined) return;
     console.log({
-      brand: data.brand,
+      brand: res.brand,
       stockCode: data.stockCode,
       desiredYield: data.desiredYield,
       stockPrice: res.stockPrice,
@@ -93,7 +89,7 @@ export const RegisterModal: FC = () => {
     });
     try {
       await setDoc(doc(db, 'stocks', data.stockCode), {
-        brand: data.brand,
+        brand: res.brand,
         stockCode: data.stockCode,
         desiredYield: data.desiredYield,
         stockPrice: res.stockPrice,
@@ -129,14 +125,6 @@ export const RegisterModal: FC = () => {
             <ModalHeader>新規銘柄登録</ModalHeader>
             <ModalCloseButton />
             <ModalBody pb={6}>
-              <FormControl id="brand" isInvalid={Boolean(errors.brand)}>
-                <FormLabel>銘柄</FormLabel>
-                <Input placeholder="トヨタ自動車" {...register('brand')} />
-                <FormErrorMessage>
-                  {errors.brand && errors.brand?.message}
-                </FormErrorMessage>
-              </FormControl>
-
               <FormControl
                 mt={4}
                 id="stockCode"
