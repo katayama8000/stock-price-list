@@ -31,6 +31,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ja';
+import { formatJT } from '@/constant/format.const';
 
 export const RegisterModal: FC = () => {
   const toast = useToast();
@@ -87,7 +88,7 @@ export const RegisterModal: FC = () => {
       desiredYield: data.desiredYield,
       stockPrice: res.stockPrice,
       dividend: res.dividend,
-      update: dayjs().locale('ja').format('YYYY-MM-DD HH:mm'),
+      update: dayjs().locale('ja').format(formatJT),
     });
     try {
       await setDoc(doc(db, 'stocks', data.stockCode), {
@@ -96,11 +97,18 @@ export const RegisterModal: FC = () => {
         desiredYield: data.desiredYield,
         stockPrice: res.stockPrice,
         dividend: res.dividend,
-        update: dayjs().locale('ja').format('YYYY-MM-DD HH:mm'),
+        update: dayjs().locale('ja').format(formatJT),
       });
       await fetchStockAll();
     } catch (error) {
       console.log(error);
+      toast({
+        title: 'エラーが発生しました',
+        description: '入力した銘柄コードを確認してください',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       handleCloseModal();
     }
