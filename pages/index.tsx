@@ -33,8 +33,8 @@ export default function Home() {
   //   const STOCK_CODE = '8591';
   //   setIsLoadingStock(true);
   //   const res = await fetch(`/api/getStock?code=${STOCK_CODE}`);
-  //   const { stockPrice, dividend }: TStock = await res.json();
-  //   setStock({ stockPrice, dividend });
+  //   const { currentValue, dividend }: TStock = await res.json();
+  //   setStock({ currentValue, dividend });
   //   setIsLoadingStock(false);
   // };
 
@@ -60,7 +60,7 @@ export default function Home() {
             <StockCard
               key={stock.stockCode}
               brand={stock.brand}
-              stockPrice={stock.stockPrice}
+              currentValue={stock.currentValue}
               dividend={stock.dividend}
               desiredYield={stock.desiredYield}
               stockCode={stock.stockCode}
@@ -79,7 +79,7 @@ type TStockCardProps = TStockCard;
 
 export const StockCard: FC<TStockCardProps> = ({
   brand,
-  stockPrice,
+  currentValue,
   dividend,
   desiredYield,
   stockCode,
@@ -89,17 +89,17 @@ export const StockCard: FC<TStockCardProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const toast = useToast();
   const dividendYield = useMemo(() => {
-    return Math.round((dividend / stockPrice) * 100 * 10) / 10;
-  }, [dividend, stockPrice]);
+    return Math.round((dividend / currentValue) * 100 * 10) / 10;
+  }, [dividend, currentValue]);
 
   const desiredPrice = useMemo(() => {
     if (desiredYield === 0) {
       return '---';
     }
     const price =
-      Math.round(((stockPrice * dividendYield) / desiredYield) * 10) / 10;
+      Math.round(((currentValue * dividendYield) / desiredYield) * 10) / 10;
     return `${price}円`;
-  }, [desiredYield, dividendYield, stockPrice]);
+  }, [desiredYield, dividendYield, currentValue]);
 
   const yieldColor = dividendYield >= desiredYield ? 'green.100' : 'red.100';
 
@@ -107,9 +107,9 @@ export const StockCard: FC<TStockCardProps> = ({
     setIsLoading(true);
     try {
       const res = await fetch(`/api/getStock?code=${stockCode}`);
-      const { stockPrice, dividend }: TStock = await res.json();
+      const { currentValue, dividend }: TStock = await res.json();
       await updateDoc(doc(db, 'stocks', stockCode), {
-        stockPrice,
+        currentValue,
         dividend,
         update: dayjs().locale('ja').format(formatJT),
       });
@@ -139,7 +139,7 @@ export const StockCard: FC<TStockCardProps> = ({
         <Heading size="md">{brand}</Heading>
         <Stack divider={<StackDivider />} spacing="2" pt="2">
           <Text pt="2" fontSize="sm">
-            現在の株価 : {stockPrice}円 | 希望株価 : {desiredPrice}
+            現在の株価 : {currentValue}円 | 希望株価 : {desiredPrice}
           </Text>
           <Text pt="2" fontSize="sm">
             利回り : {dividendYield}% | 希望利回り : {desiredYield}%
