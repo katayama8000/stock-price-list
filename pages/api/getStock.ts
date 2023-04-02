@@ -1,14 +1,9 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { chromium, Page } from 'playwright-core';
 
-type Data = {
-  name: string;
-};
-
 type Response =
   | {
-      stockPrice: number;
+      currentValue: number;
       dividend: number;
       brand: string;
     }
@@ -38,7 +33,7 @@ export default async function handler(
     const dividend = await getDividend(page);
 
     res.status(200).json({
-      stockPrice: currentValue,
+      currentValue,
       dividend,
       brand,
     });

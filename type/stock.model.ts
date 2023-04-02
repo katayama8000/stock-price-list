@@ -1,5 +1,5 @@
 type TStock = {
-  stockPrice: number;
+  currentValue: number;
   dividend: number;
   brand: string;
 };

@@ -63,8 +63,8 @@ export const RegisterModal: FC = () => {
   const handleScrapeStock = useCallback(async (stockCode: string) => {
     try {
       const res = await fetch(`/api/getStock?code=${stockCode}`);
-      const { stockPrice, dividend, brand }: TStock = await res.json();
-      return { stockPrice, dividend, brand };
+      const { currentValue, dividend, brand }: TStock = await res.json();
+      return { currentValue, dividend, brand };
     } catch (error) {
       console.log(error);
       toast({
@@ -86,7 +86,7 @@ export const RegisterModal: FC = () => {
       brand: res.brand,
       stockCode: data.stockCode,
       desiredYield: data.desiredYield,
-      stockPrice: res.stockPrice,
+      currentValue: res.currentValue,
       dividend: res.dividend,
       update: dayjs().locale('ja').format(formatJT),
     });
@@ -95,7 +95,7 @@ export const RegisterModal: FC = () => {
         brand: res.brand,
         stockCode: data.stockCode,
         desiredYield: data.desiredYield,
-        stockPrice: res.stockPrice,
+        currentValue: res.currentValue,
         dividend: res.dividend,
         update: dayjs().locale('ja').format(formatJT),
       });
@@ -171,10 +171,10 @@ export const RegisterModal: FC = () => {
                   render={({ field }) => (
                     <NumberInput precision={1} step={0.1}>
                       <NumberInputField placeholder="0.0" {...field} />
-                      <NumberInputStepper>
+                      {/* <NumberInputStepper>
                         <NumberIncrementStepper />
                         <NumberDecrementStepper />
-                      </NumberInputStepper>
+                      </NumberInputStepper> */}
                     </NumberInput>
                   )}
                 />
