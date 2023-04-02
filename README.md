@@ -2,7 +2,7 @@
 ## どういうアプリか
 ## 技術スタック
 - Next.js
-- Puppeteer
+- Playwright
 - ChakraUI
 - Firebase
 ## 参考記事
