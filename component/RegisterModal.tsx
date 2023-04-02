@@ -171,10 +171,10 @@ export const RegisterModal: FC = () => {
                   render={({ field }) => (
                     <NumberInput precision={1} step={0.1}>
                       <NumberInputField placeholder="0.0" {...field} />
-                      <NumberInputStepper>
+                      {/* <NumberInputStepper>
                         <NumberIncrementStepper />
                         <NumberDecrementStepper />
-                      </NumberInputStepper>
+                      </NumberInputStepper> */}
                     </NumberInput>
                   )}
                 />
