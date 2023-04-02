@@ -32,7 +32,7 @@ export default function Home() {
   // const handleFetchStock = async () => {
   //   const STOCK_CODE = '8591';
   //   setIsLoadingStock(true);
-  //   const res = await fetch(`/api/stock?code=${STOCK_CODE}`);
+  //   const res = await fetch(`/api/getStock?code=${STOCK_CODE}`);
   //   const { stockPrice, dividend }: TStock = await res.json();
   //   setStock({ stockPrice, dividend });
   //   setIsLoadingStock(false);
@@ -106,7 +106,7 @@ export const StockCard: FC<TStockCardProps> = ({
   const handleUpdate = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/stock?code=${stockCode}`);
+      const res = await fetch(`/api/getStock?code=${stockCode}`);
       const { stockPrice, dividend }: TStock = await res.json();
       await updateDoc(doc(db, 'stocks', stockCode), {
         stockPrice,

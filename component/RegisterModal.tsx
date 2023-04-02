@@ -62,7 +62,7 @@ export const RegisterModal: FC = () => {
 
   const handleScrapeStock = useCallback(async (stockCode: string) => {
     try {
-      const res = await fetch(`/api/stock?code=${stockCode}`);
+      const res = await fetch(`/api/getStock?code=${stockCode}`);
       const { stockPrice, dividend, brand }: TStock = await res.json();
       return { stockPrice, dividend, brand };
     } catch (error) {
