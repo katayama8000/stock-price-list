@@ -11,7 +11,7 @@ type Response =
       error: string;
     };
 
-const { NEXT_PUBLIC_USERNAME, NEXT_PUBLIC_PASSWORD } = process.env;
+const { USERNAME, PASSWORD } = process.env;
 
 export default async function handler(
   req: NextApiRequest,
@@ -49,10 +49,10 @@ export default async function handler(
 }
 
 const login = async (page: Page) => {
-  if (NEXT_PUBLIC_USERNAME === undefined || NEXT_PUBLIC_PASSWORD === undefined)
+  if (USERNAME === undefined || PASSWORD === undefined)
     throw new Error('環境変数が設定されていません。');
-  await page.type('input[name="username"]', NEXT_PUBLIC_USERNAME);
-  await page.type('input[name="password"]', NEXT_PUBLIC_PASSWORD);
+  await page.type('input[name="username"]', USERNAME);
+  await page.type('input[name="password"]', PASSWORD);
   await Promise.all([
     page.click('#neo-login-btn'),
     page.waitForURL('https://trade.sbineomobile.co.jp/home/top'),
