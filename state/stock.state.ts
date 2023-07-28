@@ -9,7 +9,7 @@ export const setStockAtom = atom(null, (get, set, payload: TStockCard[]) => {
   set(stockAtom, payload);
 });
 
-export const fetchStockAllAtom = atom(null, async (get, set) => {
+export const fetchStockAllAtom = atom(null, async (_get, set) => {
   const snapshot = await getDocs(collection(db, 'stocks'));
   const data = snapshot.docs.map((doc) => doc.data() as TStockCard);
   set(stockAtom, data);
