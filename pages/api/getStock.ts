@@ -13,10 +13,12 @@ type Response =
 
 const { USERNAME, PASSWORD } = process.env;
 
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
+  console.log(USERNAME, PASSWORD)
   console.time('playwright');
   const { code } = req.query;
 
