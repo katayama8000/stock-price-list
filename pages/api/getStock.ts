@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { chromium, Page } from 'playwright-core';
 
+export const runtime = 'edge';
+
 type Response =
   | {
       currentValue: number;
