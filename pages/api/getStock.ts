@@ -49,8 +49,10 @@ export default async function handler(
 }
 
 const login = async (page: Page) => {
-  if (USERNAME === undefined || PASSWORD === undefined)
-    throw new Error('環境変数が設定されていません。');
+  // if (USERNAME === undefined || PASSWORD === undefined)
+  //   throw new Error('環境変数が設定されていません。');
+  const USERNAME = "N41-0248339"
+  const PASSWORD = "kthmnn19981029"
   await page.type('input[name="username"]', USERNAME);
   await page.type('input[name="password"]', PASSWORD);
   await Promise.all([
