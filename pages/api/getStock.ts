@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { chromium, Page } from 'playwright-core';
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 type Response =
   | {
